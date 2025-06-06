@@ -22,6 +22,7 @@ interface Message {
 export const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showHelpChat, setShowHelpChat] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -51,6 +52,9 @@ export const Dashboard = () => {
       if (user?.user_metadata?.full_name) {
         setUserName(user.user_metadata.full_name);
       }
+      if (user?.email === 'admin@gmail.com') {
+        setIsAdmin(true);
+      }
     };
     getUserProfile();
   }, []);
@@ -58,7 +62,7 @@ export const Dashboard = () => {
   const providers: CareProvider[] = [
     { type: 'Dentist', name: 'Dr. Sarah Chen', icon: '/dentist.svg', bgColor: 'bg-blue-50' },
     { type: 'Physiotherapist', name: 'John Miller', icon: '/physiotherapist.svg', bgColor: 'bg-green-50' },
-    { type: 'Physiotherapis', name: 'Dr. Mike Ross', icon: '/chiropractor.svg', bgColor: 'bg-purple-50' },
+    { type: 'Chiropractor', name: 'Dr. Mike Ross', icon: '/chiropractor.svg', bgColor: 'bg-purple-50' },
     { type: 'Massage Therapist', name: 'Emma White', icon: '/massagetherapist.svg', bgColor: 'bg-orange-50' },
     { type: 'Podiatrist', name: 'Dr. Lisa Park', icon: '/podiatrist.svg', bgColor: 'bg-teal-50' },
     { type: 'Physician', name: 'Dr. James Wilson', icon: '/physician.svg', bgColor: 'bg-red-50' },
@@ -138,6 +142,14 @@ export const Dashboard = () => {
                 <EllipsisVertical className="w-5 h-5 text-gray-600" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => navigate('/admin-profile')}
+                  >
+                    <span>Add Profile</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="flex items-center gap-2 cursor-pointer"
                   onClick={handleSignOut}

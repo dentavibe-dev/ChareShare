@@ -7,6 +7,7 @@ import { Profile } from './screens/Profile';
 import { Calendar } from './screens/Calendar';
 import { Messages } from './screens/Messages';
 import { FindProvider } from './screens/FindProvider';
+import { AdminProfile } from './screens/AdminProfile';
 import { supabase } from './lib/supabase';
 
 function App() {
@@ -67,6 +68,16 @@ function App() {
               <Profile />
             ) : (
               <Navigate to="/\" replace />
+            )
+          } 
+        />
+        <Route 
+          path="/admin-profile" 
+          element={
+            session?.user?.email === 'admin@gmail.com' ? (
+              <AdminProfile />
+            ) : (
+              <Navigate to="/dashboard\" replace />
             )
           } 
         />
