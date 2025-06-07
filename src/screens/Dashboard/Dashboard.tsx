@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogTitle } from '../../components/ui/dialog';
 
 interface CareProvider {
   type: string;
-  name: string;
   icon: string;
   bgColor: string;
 }
@@ -60,12 +59,16 @@ export const Dashboard = () => {
   }, []);
   
   const providers: CareProvider[] = [
-    { type: 'Dentist', name: 'Dr. Sarah Chen', icon: '/dentist.svg', bgColor: 'bg-blue-50' },
-    { type: 'Physiotherapist', name: 'John Miller', icon: '/physiotherapist.svg', bgColor: 'bg-green-50' },
-    { type: 'Chiropractor', name: 'Dr. Mike Ross', icon: '/chiropractor.svg', bgColor: 'bg-purple-50' },
-    { type: 'Massage Therapist', name: 'Emma White', icon: '/massagetherapist.svg', bgColor: 'bg-orange-50' },
-    { type: 'Podiatrist', name: 'Dr. Lisa Park', icon: '/podiatrist.svg', bgColor: 'bg-teal-50' },
-    { type: 'Physician', name: 'Dr. James Wilson', icon: '/physician.svg', bgColor: 'bg-red-50' },
+    { type: 'Dentist', icon: '/dentist.svg', bgColor: 'bg-blue-50' },
+    { type: 'Physiotherapist', icon: '/physiotherapist.svg', bgColor: 'bg-green-50' },
+    { type: 'Massage Therapist', icon: '/massagetherapist.svg', bgColor: 'bg-orange-50' },
+    { type: 'Podiatrist', icon: '/podiatrist.svg', bgColor: 'bg-teal-50' },
+    { type: 'Physician', icon: '/physician.svg', bgColor: 'bg-red-50' },
+    { type: 'Cardiologist', icon: '/cardiologist.svg', bgColor: 'bg-pink-50' },
+    { type: 'Dermatologist', icon: '/dermatologist.svg', bgColor: 'bg-yellow-50' },
+    { type: 'Neurologist', icon: '/neurologist.svg', bgColor: 'bg-indigo-50' },
+    { type: 'Orthopedic Surgeon', icon: '/orthopedic.svg', bgColor: 'bg-gray-50' },
+    { type: 'Pediatrician', icon: '/pediatrician.svg', bgColor: 'bg-purple-50' },
   ];
 
   const handleSignOut = async () => {
@@ -143,12 +146,20 @@ export const Dashboard = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {isAdmin && (
-                  <DropdownMenuItem
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => navigate('/admin-profile')}
-                  >
-                    <span>Add Profile</span>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => navigate('/add-doctor')}
+                    >
+                      <span>Add Doctor</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => navigate('/manage-doctors')}
+                    >
+                      <span>Manage Doctors</span>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuItem
                   className="flex items-center gap-2 cursor-pointer"
@@ -171,39 +182,42 @@ export const Dashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4">
         {isMobile ? (
-          // Mobile Grid Layout with centered user circle
-          <div className="relative w-full max-w-md">
+          // Mobile Layout - Improved responsiveness
+          <div className="w-full max-w-sm mx-auto">
             {/* Centered User Circle */}
-            <Link to="/profile" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center p-1">
-              <img 
-                src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150"
-                alt="User"
-                className="w-full h-full rounded-full object-cover"
-              />
-            </Link>
+            <div className="flex justify-center mb-8">
+              <Link to="/profile" className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center p-1">
+                <img 
+                  src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150"
+                  alt="User"
+                  className="w-full h-full rounded-full object-cover"
+                />
+              </Link>
+            </div>
             
-            {/* Provider Grid */}
-            <div className="w-full grid grid-cols-2 gap-4">
+            {/* Provider Grid - Responsive 2 columns */}
+            <div className="grid grid-cols-2 gap-4">
               {providers.map((provider) => (
                 <div
-                  key={provider.name}
-                  className={`${provider.bgColor} rounded-xl p-4 flex flex-col items-center cursor-pointer transition-transform hover:scale-105`}
+                  key={provider.type}
+                  className={`${provider.bgColor} rounded-xl p-4 flex flex-col items-center cursor-pointer transition-transform hover:scale-105 min-h-[100px] justify-center`}
                   onClick={() => handleProviderClick(provider.type)}
                 >
                   <img 
                     src={provider.icon} 
                     alt={provider.type}
-                    className="w-6 h-6 mb-2"
+                    className="w-8 h-8 mb-3"
                   />
-                  <p className="text-sm font-medium text-gray-900">{provider.type}</p>
-                  <p className="text-xs text-gray-600 text-center">{provider.name}</p>
+                  <p className="text-xs font-medium text-gray-900 text-center leading-tight">
+                    {provider.type}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         ) : (
           // Desktop Circle Layout
-          <div className="relative w-[600px] h-[600px]">
+          <div className="relative w-[700px] h-[700px]">
             <Link to="/profile" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center p-1">
                 <img 
@@ -215,24 +229,23 @@ export const Dashboard = () => {
             </Link>
             {providers.map((provider, index) => {
               const angle = (index * 360) / providers.length;
-              const radius = 250;
-              const left = 300 + radius * Math.cos((angle - 90) * (Math.PI / 180));
-              const top = 300 + radius * Math.sin((angle - 90) * (Math.PI / 180));
+              const radius = 280;
+              const left = 350 + radius * Math.cos((angle - 90) * (Math.PI / 180));
+              const top = 350 + radius * Math.sin((angle - 90) * (Math.PI / 180));
 
               return (
                 <div
-                  key={provider.name}
+                  key={provider.type}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2"
                   style={{ left: `${left}px`, top: `${top}px` }}
                 >
                   <div 
-                    className="bg-white rounded-lg shadow-md p-4 w-40 cursor-pointer transition-transform hover:scale-105"
+                    className="bg-white rounded-lg shadow-md p-4 w-36 cursor-pointer transition-transform hover:scale-105"
                     onClick={() => handleProviderClick(provider.type)}
                   >
                     <img src={provider.icon} alt={provider.type} className="w-8 h-8 mx-auto mb-2" />
                     <div className="text-center">
-                      <p className="font-medium text-gray-900">{provider.type}</p>
-                      <p className="text-sm text-gray-500">{provider.name}</p>
+                      <p className="font-medium text-gray-900 text-sm leading-tight">{provider.type}</p>
                     </div>
                   </div>
                 </div>
@@ -243,10 +256,10 @@ export const Dashboard = () => {
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-20 right-4 z-20">
+      <div className="fixed bottom-24 right-4 z-20">
         <button 
           onClick={() => setShowHelpChat(true)}
-          className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
+          className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
         >
           <PlusCircleIcon className="w-6 h-6" />
         </button>
@@ -257,7 +270,7 @@ export const Dashboard = () => {
         <div className="max-w-md mx-auto">
           <button 
             onClick={() => setShowShareDialog(true)}
-            className="w-full md:w-64 bg-blue-500 text-white rounded-full py-3 px-4 flex items-center justify-center gap-2 text-sm mx-auto hover:bg-blue-600 transition-colors"
+            className="w-full bg-blue-500 text-white rounded-full py-3 px-4 flex items-center justify-center gap-2 text-sm hover:bg-blue-600 transition-colors"
           >
             <Share2Icon className="w-4 h-4" />
             Share Your Care Circle

@@ -55,20 +55,20 @@ const initialBookingLink: BookingLink = {
   url: ''
 };
 
-export const AdminProfile = () => {
+export const AddProfile = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showExistingProfileDialog, setShowExistingProfileDialog] = useState(false);
   const [formData, setFormData] = useState<AdminFormData>(initialFormData);
   const [locations, setLocations] = useState<Location[]>([initialLocation]);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [bookingLinks, setBookingLinks] = useState<BookingLink[]>([initialBookingLink]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [existingProfileId, setExistingProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
-    loadExistingProfile();
   }, []);
 
   const checkAdminStatus = async () => {
@@ -77,44 +77,29 @@ export const AdminProfile = () => {
       navigate('/dashboard');
     } else {
       setIsAdmin(true);
-      setCurrentUserId(user.id);
+      await checkExistingProfile(user.id);
     }
   };
 
-  const loadExistingProfile = async () => {
+  const checkExistingProfile = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data: existingProfile, error } = await supabase
         .from('admin_profiles')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('id, full_name')
+        .eq('user_id', userId)
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
+        console.error('Error checking existing profile:', error);
         return;
       }
 
       if (existingProfile) {
-        setFormData({
-          fullName: existingProfile.full_name || '',
-          specialization: existingProfile.specialization || 'Dentist',
-          bio: existingProfile.bio || '',
-          profileImage: existingProfile.profile_image || initialFormData.profileImage
-        });
-
-        if (existingProfile.locations && existingProfile.locations.length > 0) {
-          setLocations(existingProfile.locations);
-        }
-
-        if (existingProfile.booking_links && existingProfile.booking_links.length > 0) {
-          setBookingLinks(existingProfile.booking_links);
-        }
+        setExistingProfileId(existingProfile.id);
+        setShowExistingProfileDialog(true);
       }
     } catch (error) {
-      console.error('Error loading existing profile:', error);
+      console.error('Error checking existing profile:', error);
     }
   };
 
@@ -297,42 +282,51 @@ export const AdminProfile = () => {
         bio: formData.bio.trim(),
         profile_image: formData.profileImage,
         locations: validLocations,
-        booking_links: validBookingLinks,
-        updated_at: new Date().toISOString()
+        booking_links: validBookingLinks
       };
 
-      // Check if profile already exists
+      // Check if profile already exists (double-check)
       const { data: existingProfile } = await supabase
         .from('admin_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      let result;
-
       if (existingProfile) {
-        // Update existing profile
-        result = await supabase
+        // Update existing profile instead of inserting
+        const { data, error } = await supabase
           .from('admin_profiles')
-          .update(profileData)
+          .update({
+            ...profileData,
+            updated_at: new Date().toISOString()
+          })
           .eq('user_id', user.id)
           .select();
+
+        if (error) throw error;
+        console.log('Profile updated successfully:', data);
       } else {
         // Insert new profile
-        result = await supabase
+        const { data, error } = await supabase
           .from('admin_profiles')
           .insert(profileData)
           .select();
+
+        if (error) throw error;
+        console.log('Profile added successfully:', data);
       }
 
-      if (result.error) throw result.error;
-
-      console.log('Profile saved successfully:', result.data);
       setShowSuccessDialog(true);
 
     } catch (error: any) {
       console.error('Error saving profile:', error);
-      alert(`Error saving profile: ${error.message}`);
+      
+      if (error.code === '23505' && error.message.includes('unique_user_id')) {
+        alert('You already have a profile. Please use the "Update Profile" option instead.');
+        navigate('/admin-profile');
+      } else {
+        alert(`Error saving profile: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -340,7 +334,17 @@ export const AdminProfile = () => {
 
   const handleDialogClose = () => {
     setShowSuccessDialog(false);
-    // Don't reset form after successful save, keep the data
+    resetForm();
+  };
+
+  const handleExistingProfileDialogClose = () => {
+    setShowExistingProfileDialog(false);
+    navigate('/dashboard');
+  };
+
+  const handleGoToUpdateProfile = () => {
+    setShowExistingProfileDialog(false);
+    navigate('/admin-profile');
   };
 
   if (!isAdmin) {
@@ -360,7 +364,7 @@ export const AdminProfile = () => {
         >
           <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
         </button>
-        <span className="ml-4 text-lg font-semibold">Admin Profile</span>
+        <span className="ml-4 text-lg font-semibold">Add New Profile</span>
       </div>
 
       <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-6 max-w-3xl mx-auto">
@@ -544,12 +548,42 @@ export const AdminProfile = () => {
               disabled={isLoading}
               className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? 'Saving Profile...' : 'Add Profile'}
             </button>
           </div>
         </div>
       </form>
 
+      {/* Existing Profile Warning Dialog */}
+      <Dialog open={showExistingProfileDialog} onOpenChange={handleExistingProfileDialogClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <div className="text-center p-6">
+            <div className="w-12 h-12 rounded-full bg-yellow-100 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Already Exists</h3>
+            <p className="text-sm text-gray-500 mb-6">You already have an admin profile. You can update your existing profile instead of creating a new one.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleExistingProfileDialogClose}
+                className="flex-1 bg-gray-200 text-gray-800 py-2.5 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGoToUpdateProfile}
+                className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Update Profile
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[425px]">
           <div className="text-center p-6">
@@ -559,7 +593,7 @@ export const AdminProfile = () => {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-6">Your admin profile has been saved to the database and is now visible to users.</p>
+            <p className="text-sm text-gray-500 mb-6">The profile has been saved to the database and is now visible to users.</p>
             <button
               onClick={handleDialogClose}
               className="w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 transition-colors"

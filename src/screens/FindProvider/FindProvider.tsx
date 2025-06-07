@@ -3,7 +3,7 @@ import { ArrowLeftIcon, Search, MapPinIcon, StarIcon, BookmarkIcon } from 'lucid
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
-interface AdminProfile {
+interface Doctor {
   id: string;
   full_name: string;
   specialization: string;
@@ -19,6 +19,7 @@ interface AdminProfile {
   booking_links: Array<{
     url: string;
   }>;
+  is_active: boolean;
 }
 
 export const FindProvider = () => {
@@ -28,34 +29,46 @@ export const FindProvider = () => {
   const [locationInput, setLocationInput] = useState('');
   const [providers, setProviders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
 
   useEffect(() => {
+    // Get specialty from URL params if navigated from dashboard
+    const urlParams = new URLSearchParams(location.search);
+    const specialty = urlParams.get('specialty');
+    if (specialty) {
+      setSelectedSpecialty(specialty);
+      setSearchTerm(specialty); // Pre-fill search with specialty
+    }
     fetchProviders();
-  }, []);
+  }, [location.search]);
 
   const fetchProviders = async () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_profiles')
-        .select('*');
+      // Fetch only from doctors table
+      const { data: doctors, error } = await supabase
+        .from('doctors')
+        .select('*')
+        .eq('is_active', true);
 
       if (error) throw error;
 
-      const formattedProviders = (data || []).map(profile => ({
-        id: profile.id,
-        name: profile.full_name,
-        specialty: profile.specialization,
+      // Format doctors
+      const formattedDoctors = (doctors || []).map(doctor => ({
+        id: doctor.id,
+        name: doctor.full_name,
+        specialty: doctor.specialization,
         rating: 5.0,
         reviews: 0,
         distance: 0,
-        image: profile.profile_image || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
+        image: doctor.profile_image || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
         availability: "Contact for availability",
         education: "Professional Healthcare Provider",
         languages: ["English"],
-        location: profile.locations?.[0]?.address || "Location available on request"
+        location: doctor.locations?.[0]?.address || "Location available on request",
+        type: 'doctor'
       }));
 
-      setProviders(formattedProviders);
+      setProviders(formattedDoctors);
     } catch (error) {
       console.error('Error fetching providers:', error);
     } finally {
@@ -72,11 +85,26 @@ export const FindProvider = () => {
       const matchesLocation = !locationInput || 
         provider.location.toLowerCase().includes(locationInput.toLowerCase());
       
-      return matchesSearch && matchesLocation;
+      // If there's a selected specialty from dashboard, filter by it
+      const matchesSpecialty = !selectedSpecialty || 
+        provider.specialty.toLowerCase() === selectedSpecialty.toLowerCase();
+      
+      return matchesSearch && matchesLocation && matchesSpecialty;
     });
   };
 
   const filteredProviders = filterProviders();
+
+  const clearSpecialtyFilter = () => {
+    setSelectedSpecialty('');
+    setSearchTerm('');
+    // Update URL to remove specialty parameter
+    navigate('/find-provider', { replace: true });
+  };
+
+  const handleProviderClick = (provider: any) => {
+    navigate(`/doctor/${provider.id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,6 +118,27 @@ export const FindProvider = () => {
         </div>
         <BookmarkIcon className="w-5 h-5 text-gray-600" />
       </div>
+
+      {/* Specialty Filter Badge */}
+      {selectedSpecialty && (
+        <div className="px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Filtered by:</span>
+            <div className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <span>{selectedSpecialty}</span>
+              <button 
+                onClick={clearSpecialtyFilter}
+                className="hover:bg-blue-200 rounded-full p-1"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search Inputs */}
       <div className="p-4 space-y-3">
@@ -119,6 +168,7 @@ export const FindProvider = () => {
       <div className="px-4 mb-4">
         <p className="text-gray-600">
           {isLoading ? 'Loading providers...' : `${filteredProviders.length} providers found`}
+          {selectedSpecialty && ` for ${selectedSpecialty}`}
         </p>
       </div>
 
@@ -128,9 +178,34 @@ export const FindProvider = () => {
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           </div>
+        ) : filteredProviders.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No providers found</h3>
+            <p className="text-gray-500 mb-4">
+              {selectedSpecialty 
+                ? `No ${selectedSpecialty.toLowerCase()}s found matching your criteria.`
+                : 'No providers found matching your search criteria.'
+              }
+            </p>
+            {selectedSpecialty && (
+              <button
+                onClick={clearSpecialtyFilter}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Clear specialty filter
+              </button>
+            )}
+          </div>
         ) : (
           filteredProviders.map((provider) => (
-            <div key={provider.id} className="bg-white p-4 rounded-lg flex items-center gap-4">
+            <div 
+              key={`${provider.type}-${provider.id}`} 
+              className="bg-white p-4 rounded-lg flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleProviderClick(provider)}
+            >
               <img
                 src={provider.image}
                 alt={provider.name}
