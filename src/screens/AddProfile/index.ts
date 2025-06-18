@@ -1,1 +1,0 @@
-export { AddProfile } from './AddProfile';

@@ -1,1 +1,0 @@
-export { ManageDoctors } from './ManageDoctors';

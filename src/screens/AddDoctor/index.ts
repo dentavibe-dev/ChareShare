@@ -1,1 +1,0 @@
-export { AddDoctor } from './AddDoctor';

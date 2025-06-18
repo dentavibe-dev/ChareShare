@@ -1,1 +1,0 @@
-export { DoctorProfile } from './DoctorProfile';
