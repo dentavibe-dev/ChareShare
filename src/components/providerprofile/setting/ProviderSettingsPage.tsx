@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronRight, LogOut, User, Package, Globe, Shield, HelpCircle, Lock, Info } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, User, Package, Globe, Shield, HelpCircle, Lock, Info, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { LogoutPopup } from './logoutpopup/LogoutPopup';
+import { MessageFollowersPopup } from './messagefollowers/MessageFollowersPopup';
 
 export const ProviderSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [showMessageFollowersPopup, setShowMessageFollowersPopup] = useState(false);
 
   const handleBack = () => {
     navigate('/provider');
@@ -56,6 +58,9 @@ export const ProviderSettingsPage: React.FC = () => {
         break;
       case 'about':
         navigate('/provider/setting/about');
+        break;
+      case 'messageFollowers':
+        setShowMessageFollowersPopup(true);
         break;
       default:
         console.log(`Navigate to ${setting}`);
@@ -135,7 +140,18 @@ export const ProviderSettingsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </button>
 
-              
+              <button
+                onClick={() => handleSettingClick('messageFollowers')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <span className="text-base font-medium text-gray-900">Message Followers</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
           </div>
 
@@ -225,6 +241,12 @@ export const ProviderSettingsPage: React.FC = () => {
         onClose={handleLogoutCancel}
         onConfirm={handleLogoutConfirm}
         isLoading={isSigningOut}
+      />
+
+      {/* Message Followers Popup */}
+      <MessageFollowersPopup
+        isOpen={showMessageFollowersPopup}
+        onClose={() => setShowMessageFollowersPopup(false)}
       />
     </>
   );

@@ -17,7 +17,11 @@ export interface PatientDetails {
   problem: string;
 }
 
-export const ConfirmDetailsPage: React.FC = () => {
+interface ConfirmDetailsPageProps {
+  onBack: () => void;
+}
+
+export const ConfirmDetailsPage: React.FC<ConfirmDetailsPageProps> = ({ onBack }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { category } = useParams<{ category: string }>();
@@ -97,8 +101,7 @@ export const ConfirmDetailsPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    // Navigate back to package selection page
-    navigate(`/patient/providers/${category}/selectedprofile/selectappoinment/package`);
+    onBack();
   };
 
   const handleClosePopup = () => {

@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy, Share, Download, X, Check } from 'lucide-react';
-import { DetailedProvider } from '../../../types/provider';
+import { DetailedProvider } from '../../types/provider';
 
 interface ProviderProfileInfoProps {
   provider: DetailedProvider;
@@ -95,7 +95,7 @@ export const ProviderProfileInfo: React.FC<ProviderProfileInfoProps> = ({
   };
 
   const handleEdit = () => {
-    navigate('/provider/setting/editprofile');
+    navigate('/provider/setting');
   };
 
   return (
@@ -156,13 +156,13 @@ export const ProviderProfileInfo: React.FC<ProviderProfileInfoProps> = ({
         {/* Action Buttons */}
         <div className="flex space-x-3">
           <button
-            onClick={onFollow}
+            onClick={handleEdit}
             className="flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 text-white hover:opacity-90 focus:ring-blue-500"
             style={{
               background: 'linear-gradient(90deg, #3B82F6 0%, #234C90 100%)'
             }}
           >
-            {isFollowing ? 'Following' : 'Follow'}
+            Edit
           </button>
           
           <button
